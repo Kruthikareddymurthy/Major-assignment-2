@@ -25,7 +25,7 @@
         
         path {
             stroke-width: .5px;
-            stroke: black
+            stroke: black;
         }
         
         path:hover {
@@ -49,8 +49,8 @@
 <body>
     <div id="tooltip"></div>
     <div class="container">
-        <!-- Title goes here -->
-        <!-- Name goes here -->
+    <h1>CHOROPLETH MAPS</h1>
+    <h3>Kruthika reddy murthy</h3>
         <div class="fig1"></div>
         <div class="fig2"></div>
 
@@ -84,7 +84,6 @@
         const gini_index = "./data/gini_index.csv"
 
 
-
         // open both files
         Promise.all([
             d3.json(MA_counties),
@@ -96,7 +95,7 @@
             // gini index data
             const csv_data = data[1];
 
-            const generateMap1 = (topo_data,containerName,width,height,margin=30)=> {
+            function generateMap1(topo_data,containerName,width,height,margin=30) {
                 const svg = d3.select(containerName).append("svg")
                     .attr("width", width)
                     .attr("height", height);
@@ -174,12 +173,13 @@
                     tooltip.transition()
                         .duration(400)
                         .style("opacity", 0)
-                })
-
+                });
+            
             }
+            d3.json("./data/towns.topojson").then((topology_data) => {
+               console.log("Data loaded successfully", topology_data);    
             generateMap1(topology_data,".fig1",svgWidth,svgHeight)
-        })
+            });
     </script>
 </body>
-
 </html>
