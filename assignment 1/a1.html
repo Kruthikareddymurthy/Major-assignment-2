@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Profit Margin Calculator and line chart</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 20px;
+    }
+
+    th,td {
+      border: 1px solid #dddddd;
+      text-align: center;
+      padding: 10px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .line {
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .legend text {
+      font-size: 14px;
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Profit Margin Calculator and line chart</h2>
+  <table id="profitTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Estimated Cost</th>
+        <th>Raw Material</th>
+        <th>Workmanship</th>
+        <th>Yearly Storage</th>
+        <th>Actual Cost</th>
+        <th>Sold Price</th>
+        <th>Margin of Profit</th>
+      </tr>
+    </thead>
+    <tbody id="profitTableBody">
+    </tbody>
+  </table>
+
+  <svg id="line-chart" width="1000" height="800" viewBox="0 0 1000 800"></svg>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script>
+    // Loading the CSV data
+    d3.csv("https://raw.githubusercontent.com/umassdgithub/Fall-2023-DataViz/main/Week-4-Part-2/Exercise/data_sample.csv").then(function (data) {
+
+      //calculating actual cost, sold price, margin of profit 
+      function calculateProfitMargin(estimatedCost, RawMaterial, Workmanship, YearlyStorage) {
+        const ActualCost = RawMaterial + Workmanship + YearlyStorage;
+        const SoldPrice = estimatedCost * 1.1;
+        const Marginofprofit = soldPrice - actualCost;
+        return Marginofprofit;
+      }
+
+
+      const tableBody = document.querySelector('#profitTableBody');
+
+
+      for (let i = 0; i < data.length; i++) {
+        const row = document.createElement('tr');
+        const date = data[i].date;
+        const estimatedCost = parseFloat(data[i].EstimatedCost);
+        const rawMaterial = parseFloat(data[i].RawMaterial);
+        const workmanship = parseFloat(data[i].Workmanship);
+        const yearlyStorage = parseFloat(data[i].YearlyStorage);
+        const actualCost = rawMaterial + workmanship + yearlyStorage;
+        const soldPrice = estimatedCost * 1.1;
+
+        row.innerHTML = `
+            <td>${date}</td>
+            <td>${estimatedCost}</td>
+            <td>${rawMaterial}</td>
+            <td>${workmanship}</td>
+            <td>${yearlyStorage}</td>
+            <td>${actualCost}</td>
+            <td>${soldPrice}</td>
+            <td>${soldPrice - actualCost}</td>
+        `;
+        tableBody.appendChild(row);
+      }
+      // D3js code for line chart
+      const svgWidth = 1000;
+      const svgHeight = 800;
+      const margin = {top: 50, right: 50, bottom: 50, left: 50};
+      const chartWidth = svgWidth - margin.left - margin.right;
+      const chartHeight = svgHeight - margin.top - margin.bottom;
+
+      const svg = d3.select("#line-chart")
+        .attr("width", svgWidth)
+        .attr("height", svgHeight);
+
+      const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+      const chartGroup = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+
+      const lineData = data.map(item => {
+        return {
+          Date: new Date(item.date),
+          RawMaterial: parseFloat(item.RawMaterial),
+          Workmanship: parseFloat(item.Workmanship),
+          YearlyStorage: parseFloat(item.YearlyStorage)
+        };
+      });
+
+      // Creating x and y axes scales
+      const xScale = d3.scaleTime()
+        .domain(d3.extent(lineData, d => d.Date))
+        .range([0, chartWidth]);
+
+      const yScale = d3.scaleLinear()
+        .domain([0, 650])
+        .range([chartHeight, 0]);
+
+      // Creating line generators 
+      const lineRawMaterial = d3.line()
+        .x(d => xScale(d.Date))
+        .y(d => yScale(d.RawMaterial))
+        .curve(d3.curveCatmullRom);
+
+      const lineWorkmanship = d3.line()
+        .x(d => xScale(d.Date))
+        .y(d => yScale(d.Workmanship))
+        .curve(d3.curveCatmullRom);
+
+      const lineYearlyStorage = d3.line()
+        .x(d => xScale(d.Date))
+        .y(d => yScale(d.YearlyStorage))
+        .curve(d3.curveCatmullRom);
+
+
+      chartGroup.append("path")
+        .data([lineData])
+        .attr("class", "line")
+        .style("stroke", color(0))
+        .attr("d", lineRawMaterial);
+
+      chartGroup.append("path")
+        .data([lineData])
+        .attr("class", "line")
+        .style("stroke", color(1))
+        .attr("d", lineWorkmanship);
+
+      chartGroup.append("path")
+        .data([lineData])
+        .attr("class", "line")
+        .style("stroke", color(2))
+        .attr("d", lineYearlyStorage);
+
+      // Creating x & y axes
+      const xAxis = d3.axisBottom(xScale);
+      const yAxis = d3.axisLeft(yScale);
+
+
+      chartGroup.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", `translate(0,${chartHeight})`)
+        .call(xAxis);
+
+      chartGroup.append("g")
+        .attr("class", "y-axis")
+        .call(yAxis);
+      // adding the text value at y axes
+      chartGroup.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", 0)
+        .attr("y", 20)
+        .style("text-anchor", "end")
+        .text("Value");
+
+      // Adding legends for the lines in the chart
+      const legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", `translate(${svgWidth - 280},${20})`);
+
+      legend.selectAll("text")
+        .data(["Raw Material", "Workmanship", "Yearly Storage"])
+        .enter()
+        .append("text")
+        .attr("x", 15)
+        .attr("y", (d, i) => 60 * i)
+        .style("fill", (d, i) => ["blue", "orange", "green"][i])
+        .text(d => d);
+    });
+  </script>
+</body>
+
+</html>
